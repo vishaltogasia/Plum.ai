@@ -1,12 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white;
-    font-family: 'Inter', sans-serif;
-  }
+body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #8b5cf6;
+  color: #ffffff;
 }
 
 /* Custom premium scrollbar styling */

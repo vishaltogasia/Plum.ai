@@ -1,13 +1,14 @@
 import uuid
 import json
 import time
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from backend.database.session import get_db
 from backend.models import models
 from backend.schemas import schemas
 from backend.ai.rag import execute_rag_pipeline_stream
+from backend.api.websocket import manager, handle_chat_message, handle_typing_indicator
 from typing import List
 import logging
 
@@ -149,3 +150,115 @@ async def stream_chat_response(
             yield f"data: {json.dumps({'error': 'Server generation error occurred.'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@router.get("/sessions", response_model=List[schemas.ChatSessionOut])
+def list_business_sessions(
+    business_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    """List all chat sessions for a specific business (for Inbox view)."""
+    # Verify business exists
+    business = db.query(models.Business).filter(models.Business.id == business_id).first()
+    if not business:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Business not found."
+        )
+    
+    sessions = db.query(models.ChatSession).filter(
+        models.ChatSession.business_id == business_id
+    ).order_by(models.ChatSession.created_at.desc()).all()
+    
+    return sessions
+
+@router.post("/sessions/{session_id}/admin-message", status_code=status.HTTP_201_CREATED)
+def send_admin_message(
+    session_id: str,
+    message_in: schemas.MessageCreate,
+    db: Session = Depends(get_db)
+):
+    """Send an admin response to a customer in a chat session."""
+    session = db.query(models.ChatSession).filter(models.ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat session not found."
+        )
+    
+    # Save admin message
+    admin_msg = models.Message(
+        session_id=session_id,
+        sender="admin",
+        content=message_in.content,
+        citations=message_in.citations if hasattr(message_in, 'citations') else None
+    )
+    db.add(admin_msg)
+    db.commit()
+    db.refresh(admin_msg)
+    
+    logger.info(f"Admin message sent to session {session_id}")
+    return admin_msg
+
+@router.websocket("/ws/{session_id}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    session_id: str,
+    user_type: str = Query("customer"),
+    db: Session = Depends(get_db)
+):
+    """WebSocket endpoint for real-time chat messaging."""
+    try:
+        # Verify session exists
+        session = db.query(models.ChatSession).filter(
+            models.ChatSession.id == session_id
+        ).first()
+        
+        if not session:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Session not found")
+            return
+        
+        # Connect the client
+        await manager.connect(websocket, session_id, user_type)
+        
+        # Notify session that a new user joined
+        await manager.broadcast_to_session(session_id, {
+            "type": "user_joined",
+            "user_type": user_type,
+            "message": f"A {user_type} joined the conversation"
+        })
+        
+        while True:
+            # Receive message from client
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            
+            # Handle different message types
+            if message_data.get("type") == "message":
+                # Save and broadcast the message
+                content = message_data.get("content", "")
+                if content.strip():
+                    await handle_chat_message(
+                        session_id=session_id,
+                        message_content=content,
+                        sender_type=user_type,
+                        db=db
+                    )
+            
+            elif message_data.get("type") == "typing":
+                # Broadcast typing indicator
+                is_typing = message_data.get("is_typing", False)
+                await handle_typing_indicator(session_id, is_typing, user_type)
+    
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, session_id)
+        await manager.broadcast_to_session(session_id, {
+            "type": "user_left",
+            "user_type": user_type,
+            "message": f"A {user_type} left the conversation"
+        })
+        logger.info(f"WebSocket disconnected for session {session_id}")
+    
+    except Exception as e:
+        logger.error(f"WebSocket error for session {session_id}: {str(e)}")
+        manager.disconnect(websocket, session_id)
+

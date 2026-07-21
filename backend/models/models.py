@@ -118,3 +118,36 @@ class Analytics(Base):
     # Relationships
     business = relationship("Business", back_populates="analytics")
     session = relationship("ChatSession", back_populates="analytics")
+
+class Team(Base):
+    __tablename__ = "teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, unique=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    # Relationships
+    business = relationship("Business")
+    members = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String, default="member")  # admin, moderator, member
+    joined_at = Column(DateTime, default=datetime.datetime.utcnow)
+    
+    # Unique constraint on team_id + user_id to prevent duplicates
+    __table_args__ = (
+        Column("team_id", Integer, ForeignKey("teams.id"), nullable=False, index=True),
+        Column("user_id", Integer, ForeignKey("users.id"), nullable=False, index=True),
+    )
+
+    # Relationships
+    team = relationship("Team", back_populates="members")
+    user = relationship("User")

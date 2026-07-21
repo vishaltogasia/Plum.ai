@@ -6,6 +6,7 @@ from backend.models import models
 from backend.schemas import schemas
 from backend.auth import hash as auth_hash
 from backend.auth import jwt as auth_jwt
+from backend.middleware.auth import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -83,3 +84,60 @@ def refresh_token(token_in: schemas.Token, db: Session = Depends(get_db)):
     
     # We can also return the same refresh token, or generate a new one
     return schemas.Token(access_token=access_token, refresh_token=token_in.refresh_token)
+
+@router.put("/profile", response_model=schemas.UserOut)
+def update_profile(
+    profile_update: schemas.UserProfileUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update user profile information (name)."""
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
+    
+    # Update fields
+    if profile_update.full_name:
+        user.full_name = profile_update.full_name
+    
+    db.commit()
+    db.refresh(user)
+    return schemas.UserOut.from_orm(user)
+
+@router.post("/change-password")
+def change_password(
+    password_change: schemas.PasswordChange,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Change user password."""
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
+    
+    # Verify current password
+    if not auth_hash.verify_password(password_change.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect."
+        )
+    
+    # Validate new password
+    if len(password_change.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters long."
+        )
+    
+    # Update password
+    user.hashed_password = auth_hash.hash_password(password_change.new_password)
+    db.commit()
+    db.refresh(user)
+    
+    return {"message": "Password changed successfully."}

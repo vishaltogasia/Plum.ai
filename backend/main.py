@@ -4,7 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.utils.config import settings
 from backend.database.session import engine, Base
-from backend.api import auth, business, kb, chat, analytics
+from backend.api import auth, business, kb, chat, analytics, teams
+from backend.middleware.rate_limit import limiter, rate_limit_error_handler
+from slowapi.errors import RateLimitExceeded
 
 # Auto-create SQLite database tables on startup (production-ready fallback)
 # In high production environments, migrations are handled by Alembic,
@@ -16,6 +18,10 @@ app = FastAPI(
     description="Multi-tenant Customer Support AI SaaS Platform APIs",
     version="1.0.0"
 )
+
+# Add rate limiter to app
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_error_handler)
 
 # CORS middleware configuration
 app.add_middleware(
@@ -37,6 +43,7 @@ app.include_router(business.router, prefix=settings.API_V1_STR)
 app.include_router(kb.router, prefix=settings.API_V1_STR)
 app.include_router(chat.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
+app.include_router(teams.router, prefix=settings.API_V1_STR)
 
 @app.get("/health", tags=["system"])
 def health_check():

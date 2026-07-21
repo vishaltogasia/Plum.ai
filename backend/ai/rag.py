@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from backend.utils.config import settings
 from backend.models import models
 from backend.ai.vector_store import vector_store
+from backend.services.email import email_service
 
 logger = logging.getLogger("plum.ai.rag")
 
@@ -223,6 +224,18 @@ Assistant:"""
             )
             db.add(ticket)
             db.commit()
+            
+            # Send email notification to customer
+            if customer_email != "visitor@example.com":
+                business_name = business.name if business else "Our Support Team"
+                customer_name = session_record.customer_name if session_record else "Valued Customer"
+                email_service.send_ticket_notification(
+                    customer_email=customer_email,
+                    customer_name=customer_name,
+                    ticket_id=ticket.id,
+                    issue_description=f"Customer query: {query}",
+                    business_name=business_name
+                )
             
             # Send dynamic notifications payload inside stream
             hand_off_msg = "\n\n*[A support ticket has been opened automatically. A customer representative has been notified and will review your query shortly.]*"

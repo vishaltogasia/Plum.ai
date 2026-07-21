@@ -1,0 +1,122 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: plum-ai-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-plum_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-plum_password}
+      POSTGRES_DB: ${DB_NAME:-plum_ai}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-plum_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - plum-network
+
+  # ChromaDB Vector Store
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: plum-ai-chromadb
+    environment:
+      ANONYMIZED_TELEMETRY: "false"
+    ports:
+      - "8001:8000"
+    volumes:
+      - chromadb_data:/chroma/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - plum-network
+
+  # Backend FastAPI Service
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: plum-ai-backend
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-plum_user}:${DB_PASSWORD:-plum_password}@postgres:5432/${DB_NAME:-plum_ai}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      SMTP_SERVER: ${SMTP_SERVER:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      FRONTEND_URL: http://frontend:5173
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000","http://frontend:5173"]'
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - plum-network
+
+  # Frontend React Service
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: plum-ai-frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - plum-network
+
+  # Redis for caching and session management (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: plum-ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - plum-network
+
+volumes:
+  postgres_data:
+    driver: local
+  chromadb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  plum-network:
+    driver: bridge

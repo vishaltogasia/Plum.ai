@@ -1,0 +1,28 @@
+version: '3.9'
+
+# This file overrides docker-compose.yml for local development
+# Run with: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    volumes:
+      - ./backend:/app
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-plum_user}:${DB_PASSWORD:-plum_password}@postgres:5432/${DB_NAME:-plum_ai}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      ENVIRONMENT: development
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    command: npm run dev

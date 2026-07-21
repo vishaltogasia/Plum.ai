@@ -13,6 +13,9 @@ import Analytics from './pages/Analytics';
 import SettingsPage from './pages/SettingsPage';
 import DeployPage from './pages/DeployPage';
 import ChatPage from './pages/ChatPage';
+import InboxPage from './pages/InboxPage';
+import ProfilePage from './pages/ProfilePage';
+import TeamMembersPage from './pages/TeamMembersPage';
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -49,6 +52,16 @@ const AppLayout = () => {
             } 
           />
 
+          {/* Profile/Account settings route (protected) */}
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Workspaces details routes (protected) */}
           <Route 
             path="/workspace/:businessId" 
@@ -63,6 +76,8 @@ const AppLayout = () => {
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="deploy" element={<DeployPage />} />
+            <Route path="inbox" element={<InboxPage />} />
+            <Route path="team" element={<TeamMembersPage />} />
             <Route index element={<Navigate to="overview" replace />} />
           </Route>
 

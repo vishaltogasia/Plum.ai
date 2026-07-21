@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str | None = Field(default=None, env="GEMINI_API_KEY")
     OPENAI_API_KEY: str | None = Field(default=None, env="OPENAI_API_KEY")
 
+    # Email Configuration
+    SMTP_SERVER: str = Field(default="smtp.gmail.com", env="SMTP_SERVER")
+    SMTP_PORT: int = Field(default=587, env="SMTP_PORT")
+    SMTP_USER: str | None = Field(default=None, env="SMTP_USER")
+    SMTP_PASSWORD: str | None = Field(default=None, env="SMTP_PASSWORD")
+    FRONTEND_URL: str = Field(default="http://localhost:5173", env="FRONTEND_URL")
+
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 

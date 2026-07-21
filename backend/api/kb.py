@@ -5,6 +5,7 @@ from backend.models import models
 from backend.schemas import schemas
 from backend.middleware.auth import get_current_user
 from backend.services import parser, chunker
+from backend.services.scraper import url_scraper
 from backend.ai.vector_store import vector_store
 from typing import List
 import logging
@@ -128,28 +129,38 @@ def process_url_ingestion_task(
         return
         
     try:
-        logger.info(f"Crawling URL: {url}")
-        extracted_text = parser.parse_url(url)
+        logger.info(f"Scraping URL: {url}")
+        
+        # Scrape the URL
+        result = url_scraper.scrape_url(url)
+        if not result:
+            raise ValueError(f"Failed to scrape content from {url}")
+        
+        page_title, extracted_text = result
         char_count = len(extracted_text)
         
+        # Chunk the extracted text
         chunks = chunker.split_text(extracted_text)
         
+        # Add to vector store
         vector_store.add_document_chunks(
             business_id=business_id,
             document_id=document_id,
-            filename=url,
+            filename=page_title or url,
             chunks=chunks
         )
         
+        # Update document record
         document.status = "completed"
         document.content_text = extracted_text
         document.char_count = char_count
         db.commit()
-        logger.info(f"Crawling and ingestion successful for URL: {url}")
+        logger.info(f"Scraping and ingestion successful for URL: {url} ({char_count} chars)")
     except Exception as e:
-        logger.error(f"URL Ingestion failed: {str(e)}")
+        logger.error(f"URL Ingestion failed for {url}: {str(e)}")
         document.status = "error"
-        document.error_message = str(e)
+        if hasattr(document, 'error_message'):
+            document.error_message = str(e)
         db.commit()
 
 @router.post("/url", response_model=schemas.DocumentOut, status_code=status.HTTP_202_ACCEPTED)

@@ -72,9 +72,13 @@ const Navbar = () => {
               </button>
 
               {/* Settings icon */}
-              <button className="text-slate-400 hover:text-slate-600 transition">
+              <Link 
+                to="/profile"
+                className="text-slate-400 hover:text-slate-600 transition"
+                title="Account Settings"
+              >
                 <Settings size={18} />
-              </button>
+              </Link>
 
               {/* Profile Avatar */}
               <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 font-bold text-xs cursor-pointer overflow-hidden">

@@ -8,7 +8,8 @@ import {
   Settings, 
   HelpCircle,
   LogOut,
-  Plus
+  Plus,
+  Users
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -21,7 +22,8 @@ const Sidebar = () => {
     { name: 'Overview', path: `/workspace/${businessId}/overview`, icon: LayoutGrid },
     { name: 'Agent Builder', path: `/workspace/${businessId}/kb`, icon: Bot },
     { name: 'Analytics', path: `/workspace/${businessId}/analytics`, icon: BarChart3 },
-    { name: 'Inbox', path: `#inbox`, icon: MessageSquare },
+    { name: 'Inbox', path: `/workspace/${businessId}/inbox`, icon: MessageSquare },
+    { name: 'Team Members', path: `/workspace/${businessId}/team`, icon: Users },
     { name: 'Settings', path: `/workspace/${businessId}/settings`, icon: Settings },
   ];
 

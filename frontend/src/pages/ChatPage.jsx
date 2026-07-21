@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
-import { Send, User, Bot, AlertCircle, Sparkles, Building, ChevronRight, FileText } from 'lucide-react';
+import { Send, User, Bot, AlertCircle, Sparkles, Building, ChevronRight, FileText, Loader2 } from 'lucide-react';
 
 const ChatPage = () => {
   const { businessId } = useParams();
