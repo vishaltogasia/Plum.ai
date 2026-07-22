@@ -39,16 +39,15 @@ const KnowledgeBase = () => {
   useEffect(() => {
     fetchDocs();
     
-    // Poll documents status every 5 seconds if there are items processing
+    // Poll every 5 seconds for status updates — interval is intentionally NOT
+    // tied to `documents` state to avoid an infinite re-render loop.
     const interval = setInterval(() => {
-      const hasProcessing = documents.some(doc => doc.status === 'processing');
-      if (hasProcessing) {
-        fetchDocs();
-      }
+      fetchDocs();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [businessId, documents]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId]);
 
   const handleFileUpload = async (e) => {
     e.preventDefault();

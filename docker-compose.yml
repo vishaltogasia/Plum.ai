@@ -39,6 +39,49 @@ services:
     networks:
       - plum-network
 
+  # MinIO Object Storage (S3-compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: plum-ai-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-plum_minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-plum_minio_secret_change_in_prod}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO Web Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - plum-network
+
+  # One-shot init container: creates the default bucket on first start
+  createbuckets:
+    image: minio/mc:latest
+    container_name: plum-ai-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set plumminio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+        mc mb --ignore-existing plumminio/$${MINIO_BUCKET_NAME};
+        mc anonymous set download plumminio/$${MINIO_BUCKET_NAME};
+        echo 'MinIO bucket ready.';
+        exit 0;
+      "
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-plum_minio_admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-plum_minio_secret_change_in_prod}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-plum-documents}
+    networks:
+      - plum-network
+
   # Backend FastAPI Service
   backend:
     build:
@@ -54,12 +97,27 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       FRONTEND_URL: http://frontend:5173
       CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000","http://frontend:5173"]'
+      # MinIO / S3-compatible storage
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-plum_minio_admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-PlumAI@Minio2024!}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-plum-documents}
+      MINIO_USE_SSL: "false"
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      # Ollama local LLM — points to the Windows host machine
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-llama3.2}
+    extra_hosts:
+      # Allows Docker container to reach Ollama running on Windows host
+      - "host.docker.internal:host-gateway"
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
       chromadb:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     volumes:
       - ./backend:/app
@@ -115,6 +173,8 @@ volumes:
   chromadb_data:
     driver: local
   redis_data:
+    driver: local
+  minio_data:
     driver: local
 
 networks:

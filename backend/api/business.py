@@ -6,6 +6,8 @@ from backend.database.session import get_db
 from backend.models import models
 from backend.schemas import schemas
 from backend.middleware.auth import get_current_user
+from backend.ai.vector_store import vector_store
+from backend.services.storage import storage_service
 from typing import List
 
 router = APIRouter(prefix="/businesses", tags=["businesses"])
@@ -90,7 +92,7 @@ def delete_business(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    """Delete a business workspace and all its associated documents, history, and collections."""
+    """Delete a business workspace and all its associated documents, chat history, vectors, and stored files."""
     business = db.query(models.Business).filter(
         models.Business.id == business_id,
         models.Business.owner_id == current_user.id
@@ -101,7 +103,19 @@ def delete_business(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Business workspace not found or unauthorized access."
         )
-        
+
+    # Clean up stored files in MinIO for each document
+    documents = db.query(models.Document).filter(
+        models.Document.business_id == business_id
+    ).all()
+    for doc in documents:
+        if doc.file_path:
+            storage_service.delete_file(doc.file_path)
+
+    # Delete the entire ChromaDB vector collection for this business tenant
+    vector_store.delete_business_collection(business_id)
+
+    # Cascade-delete DB record (also removes documents, sessions, tickets via DB cascade)
     db.delete(business)
     db.commit()
     return None

@@ -7,6 +7,7 @@ from backend.schemas import schemas
 from backend.auth import hash as auth_hash
 from backend.auth import jwt as auth_jwt
 from backend.middleware.auth import get_current_user
+from backend.schemas.schemas import RefreshTokenRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -62,8 +63,8 @@ def login(login_in: schemas.UserLogin, db: Session = Depends(get_db)):
     return schemas.Token(access_token=access_token, refresh_token=refresh_token)
 
 @router.post("/refresh", response_model=schemas.Token)
-def refresh_token(token_in: schemas.Token, db: Session = Depends(get_db)):
-    """Validate refresh token and issue a new access token."""
+def refresh_token(token_in: RefreshTokenRequest, db: Session = Depends(get_db)):
+    """Validate refresh token and issue a new access/refresh token pair."""
     payload = auth_jwt.decode_token(token_in.refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
@@ -79,11 +80,11 @@ def refresh_token(token_in: schemas.Token, db: Session = Depends(get_db)):
             detail="User not found or inactive."
         )
         
-    # Issue new access token
+    # Issue new token pair
     access_token = auth_jwt.create_access_token({"user_id": user.id, "email": user.email})
+    new_refresh_token = auth_jwt.create_refresh_token({"user_id": user.id, "email": user.email})
     
-    # We can also return the same refresh token, or generate a new one
-    return schemas.Token(access_token=access_token, refresh_token=token_in.refresh_token)
+    return schemas.Token(access_token=access_token, refresh_token=new_refresh_token)
 
 @router.put("/profile", response_model=schemas.UserOut)
 def update_profile(
@@ -105,7 +106,7 @@ def update_profile(
     
     db.commit()
     db.refresh(user)
-    return schemas.UserOut.from_orm(user)
+    return schemas.UserOut.model_validate(user)
 
 @router.post("/change-password")
 def change_password(
@@ -141,3 +142,10 @@ def change_password(
     db.refresh(user)
     
     return {"message": "Password changed successfully."}
+
+@router.get("/me", response_model=schemas.UserOut)
+def get_current_user_info(
+    current_user: models.User = Depends(get_current_user)
+):
+    """Return currently authenticated user's profile information."""
+    return schemas.UserOut.model_validate(current_user)

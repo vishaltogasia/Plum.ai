@@ -45,6 +45,9 @@ class Token(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
 class TokenData(BaseModel):
     email: Optional[str] = None
     user_id: Optional[int] = None
@@ -92,6 +95,8 @@ class DocumentOut(BaseModel):
     business_id: int
     filename: str
     file_type: str
+    file_path: Optional[str] = None      # MinIO object key (set after upload completes)
+    download_url: Optional[str] = None   # Presigned URL (populated on demand via /download endpoint)
     char_count: int
     status: str
     error_message: Optional[str] = None
@@ -105,6 +110,7 @@ class DocumentOut(BaseModel):
 # ==========================================
 class MessageCreate(BaseModel):
     content: str
+    citations: Optional[List[Dict[str, Any]]] = None  # Admin-authored messages can include citations
 
 class MessageOut(BaseModel):
     id: int

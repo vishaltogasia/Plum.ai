@@ -32,9 +32,8 @@ api.interceptors.response.use(
       
       if (refreshToken && accessToken) {
         try {
-          // Request a new access token
+          // Request a new access token using the dedicated refresh endpoint
           const response = await axios.post('/api/auth/refresh', {
-            access_token: accessToken,
             refresh_token: refreshToken,
           });
           

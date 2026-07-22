@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str | None = Field(default=None, env="SMTP_PASSWORD")
     FRONTEND_URL: str = Field(default="http://localhost:5173", env="FRONTEND_URL")
 
+    # MinIO / S3-compatible Object Storage
+    MINIO_ENDPOINT: str = Field(default="minio:9000", env="MINIO_ENDPOINT")
+    MINIO_ACCESS_KEY: str = Field(default="plum_minio_admin", env="MINIO_ACCESS_KEY")
+    MINIO_SECRET_KEY: str = Field(default="plum_minio_secret", env="MINIO_SECRET_KEY")
+    MINIO_BUCKET_NAME: str = Field(default="plum-documents", env="MINIO_BUCKET_NAME")
+    MINIO_USE_SSL: bool = Field(default=False, env="MINIO_USE_SSL")
+    # Public-facing URL for presigned URLs (browser-accessible, differs from internal Docker host)
+    MINIO_PUBLIC_URL: str = Field(default="http://localhost:9000", env="MINIO_PUBLIC_URL")
+
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 

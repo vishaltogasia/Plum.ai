@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, JSON, Float
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, JSON, Float, UniqueConstraint
 from sqlalchemy.orm import relationship
 from backend.database.session import Base
 
@@ -137,15 +137,14 @@ class TeamMember(Base):
     __tablename__ = "team_members"
 
     id = Column(Integer, primary_key=True, index=True)
-    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     role = Column(String, default="member")  # admin, moderator, member
     joined_at = Column(DateTime, default=datetime.datetime.utcnow)
     
-    # Unique constraint on team_id + user_id to prevent duplicates
+    # Unique constraint: one user can only be a member of a team once
     __table_args__ = (
-        Column("team_id", Integer, ForeignKey("teams.id"), nullable=False, index=True),
-        Column("user_id", Integer, ForeignKey("users.id"), nullable=False, index=True),
+        UniqueConstraint("team_id", "user_id", name="uq_team_member"),
     )
 
     # Relationships

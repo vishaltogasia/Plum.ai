@@ -9,6 +9,7 @@ from backend.models import models
 from backend.schemas import schemas
 from backend.ai.rag import execute_rag_pipeline_stream
 from backend.api.websocket import manager, handle_chat_message, handle_typing_indicator
+from backend.middleware.auth import get_current_user
 from typing import List
 import logging
 
@@ -48,14 +49,25 @@ def create_chat_session(
 @router.get("/sessions/{session_id}/messages", response_model=List[schemas.MessageOut])
 def list_session_messages(
     session_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    """Retrieve chat history for a specific chat session."""
+    """Retrieve chat history for a specific chat session (authenticated only)."""
     session = db.query(models.ChatSession).filter(models.ChatSession.id == session_id).first()
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat session not found."
+        )
+    # Verify caller owns the associated business
+    business = db.query(models.Business).filter(
+        models.Business.id == session.business_id,
+        models.Business.owner_id == current_user.id
+    ).first()
+    if not business:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view this session."
         )
     return db.query(models.Message).filter(models.Message.session_id == session_id).order_by(models.Message.created_at.asc()).all()
 
@@ -154,15 +166,19 @@ async def stream_chat_response(
 @router.get("/sessions", response_model=List[schemas.ChatSessionOut])
 def list_business_sessions(
     business_id: int = Query(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    """List all chat sessions for a specific business (for Inbox view)."""
-    # Verify business exists
-    business = db.query(models.Business).filter(models.Business.id == business_id).first()
+    """List all chat sessions for a specific business (for Inbox view — authenticated only)."""
+    # Verify business exists and caller is owner
+    business = db.query(models.Business).filter(
+        models.Business.id == business_id,
+        models.Business.owner_id == current_user.id
+    ).first()
     if not business:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Business not found."
+            detail="Business not found or unauthorized."
         )
     
     sessions = db.query(models.ChatSession).filter(
@@ -190,7 +206,7 @@ def send_admin_message(
         session_id=session_id,
         sender="admin",
         content=message_in.content,
-        citations=message_in.citations if hasattr(message_in, 'citations') else None
+        citations=message_in.citations
     )
     db.add(admin_msg)
     db.commit()
