@@ -1,113 +1,84 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Link, useLocation } from 'react-router-dom';
-import { Bell, Settings, Search, User } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Helper to determine if link is active
-  const isActive = (path) => {
-    return location.pathname.includes(path);
-  };
+  const isActive = (path) => location.pathname.includes(path);
 
   return (
-    <nav className="h-16 border-b border-slate-100 bg-white px-8 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-      {/* Brand Logo */}
-      <div className="flex items-center gap-3">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="font-extrabold text-2xl tracking-tight text-[#31103f]">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#fff7fa]/80 glass-nav border-b border-[#d2c2cd] h-20">
+      <nav className="flex justify-between items-center w-full px-8 h-full max-w-[1440px] mx-auto">
+        <div className="flex items-center gap-8">
+          <Link to="/" className="font-bold text-xl text-[#300033] flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#300033]" style={{ fontVariationSettings: "'FILL' 1" }}>cloud_done</span>
             Plum.ai
-          </span>
-        </Link>
-      </div>
-
-      {/* Center Search Input */}
-      <div className="hidden md:flex items-center max-w-sm w-full mx-8">
-        <div className="relative w-full">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-            <Search size={16} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search analytics..."
-            className="w-full bg-[#f8f6fa] border border-[#e8e5ec] text-slate-700 placeholder-slate-400 pl-9 pr-4 py-2.5 rounded-xl text-xs outline-none focus:border-brand-400 transition"
-          />
-        </div>
-      </div>
-
-      {/* Nav Actions Links & User profile */}
-      <div className="flex items-center gap-6">
-        {user ? (
-          <>
-            <div className="flex items-center gap-6 text-xs font-semibold text-slate-500">
+          </Link>
+          {user && (
+            <div className="hidden md:flex items-center gap-6 text-sm font-medium">
               <Link 
                 to="/dashboard" 
-                className={`hover:text-slate-900 transition ${isActive('/dashboard') ? 'text-slate-900 border-b-2 border-[#4c1d95] py-5 mt-0.5' : ''}`}
+                className={`transition-colors py-1 ${isActive('/dashboard') ? 'text-[#300033] font-semibold border-b-2 border-[#300033]' : 'text-[#4f434c] hover:text-[#300033]'}`}
               >
                 Dashboard
               </Link>
               <Link 
-                to={`/workspace/1/analytics`} 
-                className={`hover:text-slate-900 transition ${isActive('/analytics') ? 'text-slate-900 border-b-2 border-[#4c1d95] py-5 mt-0.5' : ''}`}
+                to="/workspace/1/analytics" 
+                className={`transition-colors py-1 ${isActive('/analytics') ? 'text-[#300033] font-semibold border-b-2 border-[#300033]' : 'text-[#4f434c] hover:text-[#300033]'}`}
               >
                 Analytics
               </Link>
-              <a 
-                href="#inbox" 
-                className="hover:text-slate-900 transition"
+              <Link 
+                to="/workspace/1/inbox" 
+                className={`transition-colors py-1 ${isActive('/inbox') ? 'text-[#300033] font-semibold border-b-2 border-[#300033]' : 'text-[#4f434c] hover:text-[#300033]'}`}
               >
                 Inbox
-              </a>
-            </div>
-
-            <div className="h-4 w-px bg-slate-200" />
-
-            <div className="flex items-center gap-4">
-              {/* Notification icon */}
-              <button className="text-slate-400 hover:text-slate-600 transition relative">
-                <Bell size={18} />
-                <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-rose-500 rounded-full" />
-              </button>
-
-              {/* Settings icon */}
-              <Link 
-                to="/profile"
-                className="text-slate-400 hover:text-slate-600 transition"
-                title="Account Settings"
-              >
-                <Settings size={18} />
               </Link>
-
-              {/* Profile Avatar */}
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 font-bold text-xs cursor-pointer overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
             </div>
-          </>
-        ) : (
-          <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-xs font-bold text-slate-600 hover:text-slate-900 transition"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/register"
-              className="text-xs font-bold bg-[#4c1d95] hover:bg-[#3D1B48] text-white px-4 py-2 rounded-lg transition"
-            >
-              Get Started
-            </Link>
-          </div>
-        )}
-      </div>
-    </nav>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          {user ? (
+            <>
+              <button 
+                className="material-symbols-outlined text-[#4f434c] hover:text-[#300033] p-2 transition-all relative"
+                title="Notifications"
+              >
+                notifications
+                <span className="absolute top-2 right-2 w-2 h-2 bg-[#ba1a1a] rounded-full"></span>
+              </button>
+              <button 
+                onClick={() => navigate('/workspace/1/settings')}
+                className="material-symbols-outlined text-[#4f434c] hover:text-[#300033] p-2 transition-all"
+                title="Settings"
+              >
+                settings
+              </button>
+              <Link to="/profile" className="w-10 h-10 rounded-full bg-[#d6e0f6] overflow-hidden border border-[#d2c2cd] flex items-center justify-center cursor-pointer">
+                <img 
+                  className="w-full h-full object-cover" 
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3ah1-ezVQbOD_OXY9LdIuaEThJdcXdOGoKRW99gx3ou211hItb8RhwC6t-kNE6YPUgW31nIVWHas3tzWSYaK4YsftRmbCJEfesZ9lHyigecEtKmJLZISv-jELAAgOU6e1kE55AoLqUZ5688tjOMUEpqiAK2zQ-3pZ8yQCZMOYwMjV67jollj0JEr7NfUwWcMn-nMnERRZZyuNasZ-fsBP7gU0dDWYLnwcNQt7DERluvA63Z0dvrBo" 
+                  alt="User avatar" 
+                />
+              </Link>
+            </>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link to="/login" className="text-sm font-semibold text-[#4f434c] hover:text-[#300033]">
+                Sign In
+              </Link>
+              <Link to="/register" className="px-5 py-2.5 bg-[#300033] text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow">
+                Start Free
+              </Link>
+            </div>
+          )}
+        </div>
+      </nav>
+    </header>
   );
 };
 

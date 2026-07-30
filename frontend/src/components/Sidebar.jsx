@@ -1,16 +1,5 @@
 import React from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { 
-  LayoutGrid, 
-  Bot, 
-  BarChart3, 
-  MessageSquare, 
-  Settings, 
-  HelpCircle,
-  LogOut,
-  Plus,
-  Users
-} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -18,81 +7,76 @@ const Sidebar = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
+  const id = businessId || 1;
+
   const menuItems = [
-    { name: 'Overview', path: `/workspace/${businessId}/overview`, icon: LayoutGrid },
-    { name: 'Agent Builder', path: `/workspace/${businessId}/kb`, icon: Bot },
-    { name: 'Analytics', path: `/workspace/${businessId}/analytics`, icon: BarChart3 },
-    { name: 'Inbox', path: `/workspace/${businessId}/inbox`, icon: MessageSquare },
-    { name: 'Team Members', path: `/workspace/${businessId}/team`, icon: Users },
-    { name: 'Settings', path: `/workspace/${businessId}/settings`, icon: Settings },
+    { name: 'Overview', path: `/workspace/${id}/overview`, icon: 'dashboard' },
+    { name: 'Agent Builder', path: `/workspace/${id}/kb`, icon: 'smart_toy' },
+    { name: 'Analytics', path: `/workspace/${id}/analytics`, icon: 'monitoring' },
+    { name: 'Inbox', path: `/workspace/${id}/inbox`, icon: 'chat' },
+    { name: 'Deploy', path: `/workspace/${id}/deploy`, icon: 'rocket_launch' },
+    { name: 'Team Members', path: `/workspace/${id}/team`, icon: 'group' },
+    { name: 'Settings', path: `/workspace/${id}/settings`, icon: 'settings' },
   ];
 
   return (
-    <aside className="w-64 border-r border-slate-100 bg-[#f7f5fa] flex flex-col justify-between h-[calc(100vh-4rem)] sticky top-16 z-40 select-none">
-      <div className="py-6 px-4">
-        {/* Workspace Card Header */}
-        <div className="mb-6 px-3.5 py-3 rounded-2xl bg-[#ede9fe]/40 border border-[#ddd6fe]/30 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#4c1d95] flex items-center justify-center text-white shadow-md">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-            </svg>
-          </div>
-          <div className="overflow-hidden">
-            <h4 className="text-xs font-bold text-slate-800 leading-tight">Enterprise Workspace</h4>
-            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Plum.ai Pro</p>
-          </div>
+    <aside className="fixed left-0 top-0 h-screen w-64 glass-nav bg-[#fcf1f6] border-r border-[#d2c2cd] flex flex-col z-[60]">
+      {/* Workspace Brand Header */}
+      <div className="p-6 flex items-center gap-3">
+        <div className="w-10 h-10 bg-[#4a154b] rounded-lg flex items-center justify-center text-white shrink-0">
+          <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
         </div>
-
-        {/* Navigation links */}
-        <nav className="space-y-1">
-          {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
-                  isActive
-                    ? 'bg-[#e9e5f0] text-[#31103f] shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-[#eae7ee]/40'
-                }`
-              }
-            >
-              <item.icon size={16} className="text-slate-400 group-hover:text-slate-600" />
-              {item.name}
-            </NavLink>
-          ))}
-        </nav>
+        <div className="overflow-hidden">
+          <h2 className="font-semibold text-sm text-[#300033] leading-tight truncate">Enterprise Workspace</h2>
+          <p className="text-xs text-[#4f434c]">Plum.ai Pro</p>
+        </div>
       </div>
 
-      {/* Sidebar Bottom section */}
-      <div className="p-4 space-y-4 border-t border-slate-200/50 bg-[#F3F1F6]/50">
-        
-        {/* + New Agent Button */}
-        <button 
-          onClick={() => navigate('/dashboard')}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#31103f] hover:bg-[#431B52] text-white text-xs font-bold rounded-xl shadow-md transition"
-        >
-          <Plus size={14} />
-          New Agent
-        </button>
+      {/* New Agent Button */}
+      <button 
+        onClick={() => navigate('/dashboard')}
+        className="mx-4 mb-6 py-3 px-4 bg-[#300033] text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg hover:opacity-90"
+      >
+        <span className="material-symbols-outlined text-sm">add_circle</span>
+        New Agent
+      </button>
 
-        {/* Footer Actions */}
-        <div className="space-y-1.5 pt-2">
-          <a
-            href="#help"
-            className="flex items-center gap-3 px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition"
+      {/* Navigation Links */}
+      <nav className="flex-1 flex flex-col px-4 gap-1 overflow-y-auto">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all group ${
+                isActive
+                  ? 'bg-[#d6e0f6] text-[#121c2c] font-semibold'
+                  : 'text-[#4f434c] hover:bg-[#f0e5eb] hover:text-[#300033]'
+              }`
+            }
           >
-            <HelpCircle size={16} className="text-slate-400" />
-            Help
-          </a>
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-rose-600 transition text-left"
-          >
-            <LogOut size={16} className="text-slate-400" />
-            Sign Out
-          </button>
-        </div>
+            <span className="material-symbols-outlined text-[20px] group-hover:text-[#300033]">{item.icon}</span>
+            <span>{item.name}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Footer Navigation Actions */}
+      <div className="p-4 border-t border-[#d2c2cd] flex flex-col gap-1">
+        <a 
+          href="#help" 
+          className="flex items-center gap-3 text-[#4f434c] hover:bg-[#f0e5eb] hover:text-[#300033] px-4 py-3 rounded-lg text-sm font-medium transition-all"
+        >
+          <span className="material-symbols-outlined text-[20px]">help</span>
+          <span>Help</span>
+        </a>
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 text-[#4f434c] hover:bg-[#f0e5eb] hover:text-[#ba1a1a] px-4 py-3 rounded-lg text-sm font-medium transition-all w-full text-left"
+        >
+          <span className="material-symbols-outlined text-[20px]">logout</span>
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );

@@ -12,290 +12,187 @@ import {
   Pie, 
   Cell 
 } from 'recharts';
-import { 
-  Calendar, 
-  Download, 
-  TrendingUp, 
-  TrendingDown, 
-  ShieldAlert,
-  Clock, 
-  MessageSquare,
-  MoreVertical,
-  CheckCircle,
-  TrendingUp as TrendUpIcon,
-  ChevronRight,
-  TrendingDown as TrendDownIcon,
-  Loader2
-} from 'lucide-react';
 
 const Analytics = () => {
   const { businessId } = useParams();
+  const id = businessId || 1;
   
   const [overview, setOverview] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [topQuestions, setTopQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const ovRes = await api.get(`/businesses/${businessId}/analytics/overview`);
+        const ovRes = await api.get(`/businesses/${id}/analytics/overview`);
         setOverview(ovRes.data);
         
-        const tlRes = await api.get(`/businesses/${businessId}/analytics/timeline`);
+        const tlRes = await api.get(`/businesses/${id}/analytics/timeline`);
         setTimeline(tlRes.data);
         
-        const tqRes = await api.get(`/businesses/${businessId}/analytics/top-questions`);
+        const tqRes = await api.get(`/businesses/${id}/analytics/top-questions`);
         setTopQuestions(tqRes.data);
       } catch (err) {
-        setError('Failed to fetch analytics.');
+        console.error('Failed to fetch analytics:', err);
       } finally {
         setLoading(false);
       }
     };
     fetchAnalytics();
-  }, [businessId]);
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="h-64 flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-brand-600" size={32} />
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-[#300033] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // Sentiment Pie Chart data
   const sentimentData = [
-    { name: 'Positive', value: 84, color: '#A7C49E' }, // Soft green
-    { name: 'Neutral', value: 12, color: '#C0D5E8' },  // Soft blue
-    { name: 'Negative', value: 4, color: '#6A4D76' },   // Soft purple
+    { name: 'Positive', value: 84, color: '#300033' },
+    { name: 'Neutral', value: 12, color: '#be7db9' },
+    { name: 'Negative', value: 4, color: '#e0b8da' },
   ];
 
   return (
-    <div className="space-y-6 max-w-[1200px] mx-auto bg-[#FDFBFD] p-1 text-slate-800">
-      
-      {/* Title Header with date filters and PDF Export buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
+    <div className="p-8 max-w-[1440px] mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Analytics & Insights</h1>
-          <p className="text-slate-500 text-xs mt-0.5">Real-time performance monitoring for Plum AI agents.</p>
+          <h1 className="text-3xl font-bold text-[#300033]">Analytics & Insights</h1>
+          <p className="text-sm text-[#4f434c] mt-1">Real-time performance monitoring and intelligence for Plum AI agents</p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-lg bg-white shadow-sm transition">
-            <Calendar size={14} className="text-slate-400" />
+        <div className="flex items-center gap-3">
+          <button className="px-4 py-2 bg-white border border-[#d2c2cd] text-[#4f434c] rounded-xl font-semibold text-xs hover:bg-[#f6ebf0] transition">
             Last 30 Days
           </button>
-          <button className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#4c1d95] hover:bg-[#3D1B48] text-white text-xs font-semibold rounded-lg shadow-sm shadow-[#4c1d95]/10 transition">
-            <Download size={14} />
-            Export PDF
+          <button className="px-5 py-2 bg-[#300033] text-white rounded-xl font-semibold text-xs hover:opacity-90 transition shadow flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">download</span>
+            Export Analytics PDF
           </button>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid gap-5 md:grid-cols-3">
-        {/* Card 1: Resolution Rate */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between h-36">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
-              <CheckCircle size={20} />
-            </div>
-            <div className="flex items-center gap-0.5 text-xs font-bold text-emerald-500 bg-emerald-50/50 px-1.5 py-0.5 rounded-full">
-              <TrendingUp size={12} />
-              +12.4%
-            </div>
+      {/* KPI Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[#4f434c] text-sm font-medium">Resolution Rate</span>
+            <span className="material-symbols-outlined text-[#4a154b]">task_alt</span>
           </div>
-          <div className="mt-3">
-            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Resolution Rate</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-0.5">
-              {overview?.resolution_rate || '94.2'}%
-            </h3>
-          </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-            <div className="bg-[#A7C49E] h-full rounded-full" style={{ width: `${overview?.resolution_rate || 94.2}%` }} />
-          </div>
+          <div className="text-3xl font-bold text-[#300033]">{overview?.resolution_rate || '94.2'}%</div>
+          <p className="text-xs text-green-600 mt-2 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">trending_up</span>
+            +12.4% vs last period
+          </p>
         </div>
 
-        {/* Card 2: Avg Response Time */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between h-36">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-              <Clock size={20} />
-            </div>
-            <div className="flex items-center gap-0.5 text-xs font-bold text-rose-500 bg-rose-50/50 px-1.5 py-0.5 rounded-full">
-              <TrendingDown size={12} />
-              -2.1%
-            </div>
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[#4f434c] text-sm font-medium">Avg Response Time</span>
+            <span className="material-symbols-outlined text-[#4a154b]">speed</span>
           </div>
-          <div className="mt-3">
-            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Avg Response Time</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-0.5">
-              {overview?.avg_response_time || '0.8'}s
-            </h3>
-          </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-            <div className="bg-[#6A4D76] h-full rounded-full animate-pulse" style={{ width: '40%' }} />
-          </div>
+          <div className="text-3xl font-bold text-[#300033]">{overview?.avg_response_time || '0.8'}s</div>
+          <p className="text-xs text-green-600 mt-2 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">arrow_downward</span>
+            -0.2s optimization
+          </p>
         </div>
 
-        {/* Card 3: Total Conversations */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between h-36">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
-              <MessageSquare size={20} />
-            </div>
-            <div className="flex items-center gap-0.5 text-xs font-bold text-emerald-500 bg-emerald-50/50 px-1.5 py-0.5 rounded-full">
-              <TrendingUp size={12} />
-              +8.7%
-            </div>
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[#4f434c] text-sm font-medium">Total Conversations</span>
+            <span className="material-symbols-outlined text-[#4a154b]">forum</span>
           </div>
-          <div className="mt-3">
-            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Total Conversations</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-0.5">
-              {overview?.total_chats.toLocaleString() || '42,891'}
-            </h3>
-          </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-            <div className="bg-emerald-400 h-full rounded-full" style={{ width: '78%' }} />
-          </div>
+          <div className="text-3xl font-bold text-[#300033]">{overview?.total_chats?.toLocaleString() || '42,891'}</div>
+          <p className="text-xs text-[#be7db9] mt-2 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">trending_up</span>
+            +8.7% volume increase
+          </p>
         </div>
       </div>
 
-      {/* Charts Section: Volume and Sentiment */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        
-        {/* Conversation Volume Area Chart */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] lg:col-span-2 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-sm font-bold text-slate-900">Conversation Volume</h2>
-            <button className="text-slate-400 hover:text-slate-600">
-              <MoreVertical size={16} />
-            </button>
-          </div>
-          
-          <div className="h-64 w-full">
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Conversation Volume Chart */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <h2 className="text-lg font-bold text-[#300033] mb-6">Conversation Volume</h2>
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={timeline} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <AreaChart data={timeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="volumeGlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4c1d95" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#4c1d95" stopOpacity={0.005}/>
+                    <stop offset="5%" stopColor="#300033" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#300033" stopOpacity={0.01}/>
                   </linearGradient>
                 </defs>
-                <XAxis 
-                  dataKey="date" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{ fontSize: 10, fill: '#94a3b8' }} 
-                />
-                <YAxis 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{ fontSize: 10, fill: '#94a3b8' }} 
-                />
-                <Tooltip 
-                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="conversations" 
-                  stroke="#4c1d95" 
-                  strokeWidth={3} 
-                  fillOpacity={1} 
-                  fill="url(#volumeGlow)" 
-                />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#80737d' }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#80737d' }} />
+                <Tooltip contentStyle={{ background: '#300033', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }} />
+                <Area type="monotone" dataKey="conversations" stroke="#300033" strokeWidth={3} fill="url(#volumeGlow)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Sentiment Analysis Donut Chart */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+        {/* Sentiment Analysis */}
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow flex flex-col justify-between">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 mb-6">Sentiment Analysis</h2>
-            
-            <div className="h-44 w-full relative flex items-center justify-center">
+            <h2 className="text-lg font-bold text-[#300033] mb-4">Sentiment Breakdown</h2>
+            <div className="h-52 w-full relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={sentimentData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={72}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
+                  <Pie data={sentimentData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={4} dataKey="value">
                     {sentimentData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
-              
-              {/* Central text representation */}
               <div className="absolute text-center">
-                <span className="text-3xl font-extrabold text-slate-900">84%</span>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Positive</p>
+                <span className="text-3xl font-bold text-[#300033]">84%</span>
+                <p className="text-[10px] text-[#80737d] uppercase font-bold">Positive CSAT</p>
               </div>
             </div>
           </div>
 
-          {/* Sentiment Legends list matching visual style */}
-          <div className="space-y-2 border-t border-slate-50 pt-4 mt-2">
+          <div className="space-y-2 border-t border-[#f0e5eb] pt-4">
             {sentimentData.map((item, index) => (
               <div key={index} className="flex items-center justify-between text-xs font-semibold">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-slate-500">{item.name}</span>
+                  <span className="text-[#4f434c]">{item.name}</span>
                 </div>
-                <span className="text-slate-800">{item.value}%</span>
+                <span className="text-[#300033]">{item.value}%</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Top Questions insights table card */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] overflow-hidden">
-        <div className="flex justify-between items-center p-5 border-b border-slate-50">
-          <h2 className="text-sm font-bold text-slate-900">Top Questions</h2>
-          <a href="#insights" className="text-xs text-brand-600 hover:text-brand-500 font-bold flex items-center gap-0.5">
-            View All Insights
-            <ChevronRight size={14} />
-          </a>
-        </div>
-        
+      {/* Top Questions Table */}
+      <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+        <h2 className="text-lg font-bold text-[#300033] mb-4">Top User Queries & Resolution Confidence</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left text-sm">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                <th className="py-3 px-6">Common User Query</th>
-                <th className="py-3 px-6 text-center">Frequency</th>
-                <th className="py-3 px-6 text-center">Resolution %</th>
-                <th className="py-3 px-6 text-center">Trend</th>
-                <th className="py-3 px-6 text-center">AI Confidence</th>
+              <tr className="border-b border-[#f0e5eb] text-xs font-semibold text-[#80737d]">
+                <th className="pb-3">Query</th>
+                <th className="pb-3 text-center">Frequency</th>
+                <th className="pb-3 text-center">Resolution %</th>
+                <th className="pb-3 text-right">AI Confidence</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-600">
+            <tbody className="divide-y divide-[#f0e5eb]">
               {topQuestions.map((q, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/20">
-                  <td className="py-3.5 px-6 font-semibold text-slate-800">{q.question}</td>
-                  <td className="py-3.5 px-6 text-center font-semibold text-slate-500">{q.frequency}</td>
-                  <td className="py-3.5 px-6 text-center font-semibold text-slate-700">{q.resolution_rate}%</td>
-                  <td className="py-3.5 px-6 text-center">
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md mx-auto">
-                      <TrendUpIcon size={10} /> +{(15 - idx * 2.3).toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-6">
-                    <div className="flex items-center gap-2 justify-center">
-                      <div className="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
-                        <div className="bg-[#4c1d95] h-full rounded-full" style={{ width: `${q.ai_confidence * 100}%` }} />
-                      </div>
-                      <span className="font-semibold text-slate-500 font-mono text-[10px]">{(q.ai_confidence * 100).toFixed(0)}%</span>
-                    </div>
+                <tr key={idx}>
+                  <td className="py-3.5 font-medium text-[#1f1a1e]">{q.question}</td>
+                  <td className="py-3.5 text-center text-[#4f434c]">{q.frequency}</td>
+                  <td className="py-3.5 text-center font-bold text-green-700">{q.resolution_rate}%</td>
+                  <td className="py-3.5 text-right font-mono text-xs font-bold text-[#300033]">
+                    {(q.ai_confidence * 100).toFixed(0)}%
                   </td>
                 </tr>
               ))}

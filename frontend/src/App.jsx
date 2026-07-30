@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import Navbar from './components/Navbar';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -22,23 +23,22 @@ const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#fff7fa] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#300033] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// Route wrapper to conditionally display the main navbar
-// We don't want the admin navigation navbar to show on the public ChatPage viewport!
 const AppLayout = () => {
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-[#fff7fa] flex flex-col">
       <Navbar />
       <div className="flex-1">
         <Routes>
-          {/* Public Authentication routes */}
+          {/* Public Landing & Authentication routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -82,8 +82,7 @@ const AppLayout = () => {
           </Route>
 
           {/* Fallback redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>

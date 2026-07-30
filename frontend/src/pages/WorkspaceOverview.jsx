@@ -1,157 +1,295 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { 
-  Building2, 
-  Database, 
-  MessageSquare, 
-  ArrowUpRight, 
-  Loader2, 
-  Settings, 
-  UploadCloud,
-  Share2
-} from 'lucide-react';
 
 const WorkspaceOverview = () => {
   const { businessId } = useParams();
+  const navigate = useNavigate();
   const [business, setBusiness] = useState(null);
-  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [suggestionAccepted, setSuggestionAccepted] = useState(false);
+
+  const id = businessId || 1;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const busRes = await api.get(`/businesses/${businessId}`);
+        const busRes = await api.get(`/businesses/${id}`);
         setBusiness(busRes.data);
-        
-        const docRes = await api.get(`/businesses/${businessId}/kb/documents`);
-        setDocuments(docRes.data);
       } catch (err) {
-        setError('Failed to fetch workspace info.');
+        console.error('Failed to load workspace:', err);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [businessId]);
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <Loader2 className="animate-spin text-brand-500" size={32} />
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-[#300033] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const completedDocs = documents.filter(d => d.status === 'completed').length;
-  const processingDocs = documents.filter(d => d.status === 'processing').length;
-
   return (
-    <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Overview</h1>
-        <p className="text-slate-400 text-sm mt-1">Real-time health and configurations of your AI Employee</p>
+    <div className="p-8 max-w-[1440px] mx-auto space-y-8">
+      {/* Workspace Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-[#300033]">Workspace Overview</h1>
+          <p className="text-sm text-[#4f434c] mt-1">
+            {business?.name ? `${business.name} — AI Employees and Performance Metrics` : 'Manage your enterprise AI agents and monitor real-time performance'}
+          </p>
+        </div>
+        <button 
+          onClick={() => navigate(`/workspace/${id}/kb`)}
+          className="px-5 py-2.5 bg-[#300033] text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow self-start sm:self-auto"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          Create New Agent
+        </button>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Main Stats Cards */}
-      <div className="grid gap-5 md:grid-cols-3">
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-            <Building2 size={24} />
+      {/* 4 Key Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[#4f434c] text-sm font-medium">Total Agents</span>
+            <span className="material-symbols-outlined text-[#4a154b]">smart_toy</span>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Business Name</p>
-            <h3 className="text-lg font-bold text-white mt-0.5 truncate max-w-[180px]">{business?.name}</h3>
-          </div>
+          <div className="text-3xl font-bold text-[#300033]">12</div>
+          <p className="text-xs text-[#be7db9] mt-2 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">trending_up</span>
+            +2 this month
+          </p>
         </div>
 
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400">
-            <Database size={24} />
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[#4f434c] text-sm font-medium">Active Convos</span>
+            <span className="material-symbols-outlined text-[#4a154b]">forum</span>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Ingested Documents</p>
-            <h3 className="text-2xl font-bold text-white mt-0.5">
-              {completedDocs} <span className="text-xs text-slate-500 font-normal">loaded</span>
-              {processingDocs > 0 && <span className="text-xs text-yellow-400 font-normal ml-2">({processingDocs} indexing)</span>}
-            </h3>
-          </div>
+          <div className="text-3xl font-bold text-[#300033]">1.4k</div>
+          <p className="text-xs text-green-600 mt-2 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">arrow_upward</span>
+            14% vs last week
+          </p>
         </div>
 
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-            <MessageSquare size={24} />
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[#4f434c] text-sm font-medium">Avg. Response Time</span>
+            <span className="material-symbols-outlined text-[#4a154b]">speed</span>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Agent Status</p>
-            <h3 className="text-lg font-bold text-emerald-400 mt-0.5">Active & Trained</h3>
+          <div className="text-3xl font-bold text-[#300033]">0.8s</div>
+          <p className="text-xs text-green-600 mt-2 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">arrow_downward</span>
+            -0.2s optimization
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[#4f434c] text-sm font-medium">Success Rate</span>
+            <span className="material-symbols-outlined text-[#4a154b]">check_circle</span>
           </div>
+          <div className="text-3xl font-bold text-[#300033]">94%</div>
+          <p className="text-xs text-[#be7db9] mt-2 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">trending_up</span>
+            +3.1% csat
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Quick Launch Card */}
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-brand-500/10 transition-all" />
-          <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-            Test Chatbot
-            <ArrowUpRight size={16} className="text-slate-500 group-hover:text-brand-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-          </h2>
-          <p className="text-slate-400 text-sm mb-6 leading-relaxed">Open the public chat link for this workspace to test the AI's training and conversational response streaming.</p>
-          <a
-            href={`/chat/${businessId}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-medium rounded-xl text-sm transition"
+      {/* Agents Grid & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* My AI Agents (2 cols) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#300033]">My AI Agents</h2>
+            <button 
+              onClick={() => navigate(`/workspace/${id}/kb`)}
+              className="text-xs font-semibold text-[#300033] hover:underline"
+            >
+              View All
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Customer Support Agent */}
+            <div 
+              onClick={() => navigate(`/workspace/${id}/kb`)}
+              className="bg-white p-6 rounded-xl border border-[#d2c2cd] bento-card cursor-pointer flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-[#4a154b] text-white flex items-center justify-center font-bold">
+                    CS
+                  </div>
+                  <span className="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                    Active
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-[#300033]">Customer Support</h3>
+                <p className="text-xs text-[#4f434c] mt-1 line-clamp-2">Handles general customer inquiries, order tracking, and refund requests.</p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f0e5eb] flex items-center justify-between text-xs text-[#80737d]">
+                <span>1,240 Convos</span>
+                <span className="text-[#300033] font-semibold hover:underline">Configure →</span>
+              </div>
+            </div>
+
+            {/* Sales Assistant */}
+            <div 
+              onClick={() => navigate(`/workspace/${id}/kb`)}
+              className="bg-white p-6 rounded-xl border border-[#d2c2cd] bento-card cursor-pointer flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-[#d6e0f6] text-[#121c2c] flex items-center justify-center font-bold">
+                    SA
+                  </div>
+                  <span className="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                    Active
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-[#300033]">Sales Assistant</h3>
+                <p className="text-xs text-[#4f434c] mt-1 line-clamp-2">Qualifies inbound leads and schedules product demo calls on calendar.</p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f0e5eb] flex items-center justify-between text-xs text-[#80737d]">
+                <span>480 Convos</span>
+                <span className="text-[#300033] font-semibold hover:underline">Configure →</span>
+              </div>
+            </div>
+
+            {/* IT Helpdesk */}
+            <div 
+              onClick={() => navigate(`/workspace/${id}/kb`)}
+              className="bg-white p-6 rounded-xl border border-[#d2c2cd] bento-card cursor-pointer flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-[#dbe9a5] text-[#141a00] flex items-center justify-center font-bold">
+                    IT
+                  </div>
+                  <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse"></span>
+                    Training
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-[#300033]">IT Helpdesk</h3>
+                <p className="text-xs text-[#4f434c] mt-1 line-clamp-2">Internal employee support for password resets and software provisioning.</p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#f0e5eb] flex items-center justify-between text-xs text-[#80737d]">
+                <span>120 Convos</span>
+                <span className="text-[#300033] font-semibold hover:underline">Configure →</span>
+              </div>
+            </div>
+
+            {/* + New Agent Card */}
+            <div 
+              onClick={() => navigate(`/workspace/${id}/kb`)}
+              className="drag-dash-border bg-[#fcf1f6]/60 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#f6ebf0] transition-colors group"
+            >
+              <div className="w-12 h-12 rounded-full bg-white border border-[#d2c2cd] flex items-center justify-center text-[#300033] mb-3 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined">add</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#300033]">Create New Agent</h4>
+              <p className="text-xs text-[#80737d] mt-1">Deploy another tailored AI persona</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity Sidebar */}
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow flex flex-col justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-[#300033] mb-6">Recent Activity</h2>
+            <div className="space-y-6">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 text-green-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-sm">check</span>
+                </div>
+                <div>
+                  <p className="text-xs text-[#1f1a1e] font-semibold">Customer Support resolved ticket #8942</p>
+                  <p className="text-[10px] text-[#80737d] mt-0.5">12 mins ago — 100% AI resolution</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-sm">sync</span>
+                </div>
+                <div>
+                  <p className="text-xs text-[#1f1a1e] font-semibold">IT Helpdesk indexed User_Guide_v3.pdf</p>
+                  <p className="text-[10px] text-[#80737d] mt-0.5">1 hour ago — 75% complete</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-sm">person_add</span>
+                </div>
+                <div>
+                  <p className="text-xs text-[#1f1a1e] font-semibold">Sarah Chen joined workspace as Admin</p>
+                  <p className="text-[10px] text-[#80737d] mt-0.5">3 hours ago</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-sm">warning</span>
+                </div>
+                <div>
+                  <p className="text-xs text-[#1f1a1e] font-semibold">Sales Assistant API rate limit alert</p>
+                  <p className="text-[10px] text-[#80737d] mt-0.5">Yesterday — Rate limit expanded</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => navigate(`/workspace/${id}/inbox`)}
+            className="w-full mt-6 py-2.5 bg-[#fcf1f6] border border-[#d2c2cd] text-[#300033] font-semibold text-xs rounded-xl hover:bg-[#f0e5eb] transition"
           >
-            Launch Chatbot UI
-          </a>
+            Open Live Inbox →
+          </button>
+        </div>
+      </div>
+
+      {/* AI Insight Recommendation Banner */}
+      <div className="bg-gradient-to-r from-[#4a154b] to-[#300033] text-white p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-2xl text-[#f6afef]" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+          </div>
+          <div>
+            <h4 className="font-bold text-base">AI Traffic Optimization Insight</h4>
+            <p className="text-xs text-[#ffd6f8] mt-0.5">
+              Recommendation: High traffic expected for upcoming promo. Consider scaling agent concurrency limits to 50 threads.
+            </p>
+          </div>
         </div>
 
-        {/* Steps Card */}
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
-          <h2 className="text-lg font-bold text-white mb-4">Setup Checklist</h2>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-xs text-brand-400 font-bold mt-0.5">1</div>
-              <div>
-                <Link to={`/workspace/${businessId}/kb`} className="text-sm font-semibold text-slate-200 hover:text-brand-400 transition flex items-center gap-1.5">
-                  Upload Knowledge Base
-                  <UploadCloud size={14} />
-                </Link>
-                <p className="text-xs text-slate-500 mt-1">Upload business manuals, CSV reports or insert crawlable website URLs.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-xs text-brand-400 font-bold mt-0.5">2</div>
-              <div>
-                <Link to={`/workspace/${businessId}/settings`} className="text-sm font-semibold text-slate-200 hover:text-brand-400 transition flex items-center gap-1.5">
-                  Configure Settings
-                  <Settings size={14} />
-                </Link>
-                <p className="text-xs text-slate-500 mt-1">Customize system instructions prompt, logo, and core business metadata.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-xs text-brand-400 font-bold mt-0.5">3</div>
-              <div>
-                <Link to={`/workspace/${businessId}/deploy`} className="text-sm font-semibold text-slate-200 hover:text-brand-400 transition flex items-center gap-1.5">
-                  Deploy Web Widget
-                  <Share2 size={14} />
-                </Link>
-                <p className="text-xs text-slate-500 mt-1">Embed the assistant script into your company website.</p>
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <button 
+            onClick={() => setSuggestionAccepted(true)}
+            disabled={suggestionAccepted}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
+              suggestionAccepted ? 'bg-green-500 text-white' : 'bg-[#f6afef] text-[#300033] hover:bg-white'
+            }`}
+          >
+            {suggestionAccepted ? '✓ Concurrency Scaled' : 'Accept Suggestion'}
+          </button>
+          <button className="p-2 hover:bg-white/10 rounded-lg text-white transition">
+            <span className="material-symbols-outlined text-sm">thumb_up</span>
+          </button>
+          <button className="p-2 hover:bg-white/10 rounded-lg text-white transition">
+            <span className="material-symbols-outlined text-sm">thumb_down</span>
+          </button>
         </div>
       </div>
     </div>

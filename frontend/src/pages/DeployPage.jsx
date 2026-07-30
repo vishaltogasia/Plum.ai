@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Copy, Check, ExternalLink, Code2, Link as LinkIcon, MessageSquareCode } from 'lucide-react';
 
 const DeployPage = () => {
   const { businessId } = useParams();
+  const id = businessId || 1;
   
-  const publicLink = `${window.location.origin}/chat/${businessId}`;
-  const iframeCode = `<iframe src="${publicLink}" width="100%" height="600px" style="border: none; border-radius: 12px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);"></iframe>`;
+  const publicLink = `${window.location.origin}/chat/${id}`;
+  const iframeCode = `<iframe src="${publicLink}" width="100%" height="600px" style="border: none; border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);"></iframe>`;
   
   const scriptCode = `<script>
   window.PlumAgentConfig = {
-    businessId: ${businessId},
-    themeColor: '#8b5cf6',
-    title: 'Customer Support'
+    businessId: "${id}",
+    themeColor: "#300033",
+    title: "Customer Support AI"
   };
 </script>
 <script src="${window.location.origin}/static/widget.js" async></script>`;
@@ -36,93 +36,91 @@ const DeployPage = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="p-8 max-w-[1440px] mx-auto space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Deploy & Sharing</h1>
-        <p className="text-slate-400 text-sm mt-1">Integrate your AI support employee into your company website or share it publicly.</p>
+        <h1 className="text-3xl font-bold text-[#300033]">Agent Deployment & Widget Integration</h1>
+        <p className="text-sm text-[#4f434c] mt-1">Embed your AI support employee on websites, customer portals, or share direct chat links</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Share Link Card */}
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 md:col-span-3 flex flex-col justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <LinkIcon size={18} className="text-brand-400" />
-              Public Shareable Link
-            </h2>
-            <p className="text-slate-400 text-sm mb-4 leading-relaxed">Direct your customers to this standalone link for a fullscreen chat interface with the trained AI.</p>
-            
-            <div className="flex gap-2">
-              <input
-                type="text"
-                readOnly
-                value={publicLink}
-                className="flex-1 bg-slate-900 border border-slate-800 focus:border-brand-500 text-slate-300 font-mono text-xs px-4 py-3 rounded-xl outline-none"
-              />
-              <button
-                onClick={() => handleCopy(publicLink, 'link')}
-                className="px-4 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-xl transition text-xs flex items-center gap-1.5 shadow-lg shadow-brand-500/10 shrink-0"
-              >
-                {copiedLink ? <Check size={14} /> : <Copy size={14} />}
-                {copiedLink ? 'Copied' : 'Copy'}
-              </button>
-              <a
-                href={publicLink}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-semibold rounded-xl transition text-xs flex items-center gap-1.5 shrink-0"
-              >
-                <ExternalLink size={14} />
-                Open
-              </a>
-            </div>
+      <div className="space-y-6 max-w-4xl">
+        {/* Direct Link Card */}
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow space-y-4">
+          <div className="flex items-center gap-2 text-[#300033]">
+            <span className="material-symbols-outlined font-bold">link</span>
+            <h2 className="text-lg font-bold">Direct Fullscreen Chat Link</h2>
+          </div>
+          <p className="text-xs text-[#4f434c]">Shareable URL for direct customer access or internal support preview.</p>
+          <div className="flex gap-3">
+            <input 
+              type="text" 
+              readOnly 
+              value={publicLink} 
+              className="flex-1 bg-[#fcf1f6] border border-[#d2c2cd] rounded-xl px-4 py-2.5 text-xs font-mono text-[#300033] outline-none"
+            />
+            <button 
+              onClick={() => handleCopy(publicLink, 'link')}
+              className="px-5 py-2.5 bg-[#300033] text-white rounded-xl font-semibold text-xs hover:opacity-90 transition shadow flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-sm">{copiedLink ? 'done' : 'content_copy'}</span>
+              {copiedLink ? 'Copied' : 'Copy Link'}
+            </button>
+            <a 
+              href={publicLink} 
+              target="_blank" 
+              rel="noreferrer"
+              className="px-5 py-2.5 border border-[#d2c2cd] text-[#4f434c] rounded-xl font-semibold text-xs hover:bg-[#fcf1f6] transition flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-sm">open_in_new</span>
+              Open Preview
+            </a>
           </div>
         </div>
 
-        {/* IFrame Widget Card */}
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 md:col-span-3">
-          <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-            <Code2 size={18} className="text-brand-400" />
-            HTML iFrame Embed
-          </h2>
-          <p className="text-slate-400 text-sm mb-4 leading-relaxed">Embed the full chat interface directly inside an existing page on your website by pasting this iframe snippet.</p>
-          
+        {/* HTML iFrame Embed Card */}
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow space-y-4">
+          <div className="flex items-center gap-2 text-[#300033]">
+            <span className="material-symbols-outlined font-bold">code</span>
+            <h2 className="text-lg font-bold">Inline iFrame Embed Code</h2>
+          </div>
+          <p className="text-xs text-[#4f434c]">Embed a responsive, containerized chat module inside any HTML page.</p>
           <div className="relative">
-            <textarea
-              readOnly
-              value={iframeCode}
+            <textarea 
+              readOnly 
               rows={2}
-              className="w-full bg-slate-900 border border-slate-800 text-slate-300 font-mono text-xs p-4 rounded-xl outline-none resize-none"
+              value={iframeCode} 
+              className="w-full bg-[#fcf1f6] border border-[#d2c2cd] rounded-xl p-4 text-xs font-mono text-[#300033] outline-none leading-relaxed"
             />
-            <button
+            <button 
               onClick={() => handleCopy(iframeCode, 'iframe')}
-              className="absolute top-3 right-3 p-2 bg-slate-950 border border-slate-850 hover:border-slate-700 text-slate-400 hover:text-white rounded-lg transition-all"
+              className="absolute top-3 right-3 px-3 py-1 bg-white border border-[#d2c2cd] rounded-lg text-xs font-semibold text-[#300033] hover:bg-[#fcf1f6] transition flex items-center gap-1 shadow-sm"
             >
-              {copiedIframe ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              <span className="material-symbols-outlined text-xs">{copiedIframe ? 'done' : 'content_copy'}</span>
+              {copiedIframe ? 'Copied' : 'Copy Snippet'}
             </button>
           </div>
         </div>
 
-        {/* Embed Script Card */}
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 md:col-span-3">
-          <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-            <MessageSquareCode size={18} className="text-brand-400" />
-            Website Chat Bubble Widget (Script)
-          </h2>
-          <p className="text-slate-400 text-sm mb-4 leading-relaxed">Add a premium floating support bubble to the bottom-right corner of your website by injecting this script tag in your HTML file.</p>
-          
+        {/* Floating Script Widget Card */}
+        <div className="bg-white p-6 rounded-xl border border-[#d2c2cd] custom-shadow space-y-4">
+          <div className="flex items-center gap-2 text-[#300033]">
+            <span className="material-symbols-outlined font-bold">chat_bubble</span>
+            <h2 className="text-lg font-bold">Floating Corner Widget Script</h2>
+          </div>
+          <p className="text-xs text-[#4f434c]">Paste this JS snippet before the closing &lt;/body&gt; tag to add the Plum support bubble to your site.</p>
           <div className="relative">
-            <textarea
-              readOnly
-              value={scriptCode}
+            <textarea 
+              readOnly 
               rows={6}
-              className="w-full bg-slate-900 border border-slate-800 text-slate-300 font-mono text-xs p-4 rounded-xl outline-none resize-none leading-relaxed"
+              value={scriptCode} 
+              className="w-full bg-[#fcf1f6] border border-[#d2c2cd] rounded-xl p-4 text-xs font-mono text-[#300033] outline-none leading-relaxed"
             />
-            <button
+            <button 
               onClick={() => handleCopy(scriptCode, 'script')}
-              className="absolute top-3 right-3 p-2 bg-slate-950 border border-slate-850 hover:border-slate-700 text-slate-400 hover:text-white rounded-lg transition-all"
+              className="absolute top-3 right-3 px-3 py-1 bg-white border border-[#d2c2cd] rounded-lg text-xs font-semibold text-[#300033] hover:bg-[#fcf1f6] transition flex items-center gap-1 shadow-sm"
             >
-              {copiedScript ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              <span className="material-symbols-outlined text-xs">{copiedScript ? 'done' : 'content_copy'}</span>
+              {copiedScript ? 'Copied' : 'Copy Script'}
             </button>
           </div>
         </div>
