@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "plum_ai_secret_key_2026";
@@ -256,13 +256,16 @@ const teamMembers: TeamMember[] = [
   },
 ];
 
-// Helper to get Lazy Gemini Client
-let genAIClient: GoogleGenAI | null = null;
-function getGenAI(): GoogleGenAI | null {
-  if (!genAIClient && process.env.GEMINI_API_KEY) {
-    genAIClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Helper to get Lazy OpenRouter Client (OpenAI-compatible)
+let openRouterClient: OpenAI | null = null;
+function getOpenRouterClient(): OpenAI | null {
+  if (!openRouterClient && process.env.OPENROUTER_API_KEY) {
+    openRouterClient = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: "https://openrouter.ai/api/v1",
+    });
   }
-  return genAIClient;
+  return openRouterClient;
 }
 
 // Custom request interface with authenticated user
@@ -1068,7 +1071,7 @@ async function startApp() {
     const businessDocs = documents.filter((d) => d.business_id === businessId);
     const kbContext = businessDocs.map((d) => d.content_text).join("\n\n");
 
-    const ai = getGenAI();
+    const ai = getOpenRouterClient();
     let fullText = "";
     const citations: any[] = businessDocs.length > 0
       ? [
@@ -1082,31 +1085,46 @@ async function startApp() {
 
     if (ai) {
       try {
-        const prompt = `You are an AI Customer Support Assistant for business #${businessId}.
+        const systemPrompt = `You are Plum.ai, an AI Customer Support Assistant for business #${businessId}.
+
+You answer questions ONLY using the retrieved document context.
+
+Rules:
+- Never use outside knowledge.
+- Never guess.
+- Never fabricate information.
+- If the answer is not available in the provided context, reply:
+  'I couldn't find this information in the uploaded documents.'
+
+Keep responses professional and concise.
+
 Context from Knowledge Base:
-${kbContext || "No additional document context provided."}
+${kbContext || "No additional document context provided."}`;
 
-User query: ${content}
-Provide a helpful, friendly, and accurate response.`;
-
-        const responseStream = await ai.models.generateContentStream({
-          model: "gemini-2.5-flash",
-          contents: prompt,
+        const stream = await ai.chat.completions.create({
+          model: "google/gemma-4-31b-it:free",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: content },
+          ],
+          stream: true,
+          temperature: 0.3,
         });
 
-        for await (const chunk of responseStream) {
-          if (chunk.text) {
-            fullText += chunk.text;
-            res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+        for await (const chunk of stream) {
+          const text = chunk.choices?.[0]?.delta?.content;
+          if (text) {
+            fullText += text;
+            res.write(`data: ${JSON.stringify({ text })}\n\n`);
           }
         }
       } catch (err: any) {
-        console.error("Gemini API stream error:", err);
+        console.error("OpenRouter API stream error:", err);
         fullText = `Thank you for reaching out to customer support! We received your question: "${content}". Our knowledge base indicates our team is ready to assist you.`;
         res.write(`data: ${JSON.stringify({ text: fullText })}\n\n`);
       }
     } else {
-      // Fallback response generator if GEMINI_API_KEY is not set yet
+      // Fallback response generator if OPENROUTER_API_KEY is not set yet
       if (content.toLowerCase().includes("refund")) {
         fullText = "Our standard return policy allows full refunds within 30 days of purchase. Please contact support with your order number.";
       } else if (content.toLowerCase().includes("hour")) {

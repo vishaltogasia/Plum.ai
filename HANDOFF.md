@@ -41,8 +41,8 @@
 │SQLite│   │ ChromaDB │   │ AI/RAG Pipeline          │
 │(ORM) │   │ (Vectors)│   │ Parser → Chunker →       │
 │      │   │ per-     │   │ Embeddings → VectorStore  │
-│7 mdls│   │ tenant   │   │ → LLM Stream (Ollama/    │
-│      │   │ isolated │   │   Gemini/Mock fallback)   │
+│7 mdls│   │ tenant   │   │ → LLM Stream (OpenRouter/ │
+│      │   │ isolated │   │   Gemma 4 31B/Mock)       │
 └──────┘   └──────────┘   └─────────────────────────┘
 ```
 
@@ -150,7 +150,8 @@ Plum.ai/
 | sentence-transformers | 3.0.1 | Local embeddings (BAAI/bge-small-en-v1.5) |
 | pypdf | 4.2.0 | PDF parsing |
 | python-docx | 1.1.2 | DOCX parsing |
-| requests | 2.32.3 | HTTP client (Ollama/Gemini) |
+| requests | 2.32.3 | HTTP client |
+| openai | 2.21.0 | OpenRouter API (Gemma 4 31B) |
 | psycopg2-binary | 2.9.9 | PostgreSQL driver (installed, NOT default) |
 
 ### Frontend
@@ -171,7 +172,7 @@ Plum.ai/
 
 ### Prerequisites
 - Python 3.11+, Node.js 18+
-- (Optional) Ollama for local LLM or Gemini API key
+- OpenRouter API key (free tier available with Google Gemma 4 31B)
 
 ### Backend
 ```bash
@@ -213,10 +214,7 @@ export default defineConfig({
 SECRET_KEY=your-production-secret-key
 DATABASE_URL=sqlite:///./plum.db
 CHROMA_PERSIST_DIRECTORY=./chroma_db
-OLLAMA_BASE_URL=http://localhost:11434
-LLM_MODEL=llama3.2
-GEMINI_API_KEY=your-key-here  # optional
-OPENAI_API_KEY=your-key-here  # optional
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
 ```
 
 ---
@@ -293,7 +291,7 @@ File Upload → Parser (PDF/DOCX/TXT/CSV/URL) → Text Extraction
 ```
 User Message → Embed Query → ChromaDB Top-4 Search → Confidence Check (distance < 1.3)
     → Build Prompt (system_prompt + context + last 5 messages)
-    → Stream LLM (Ollama → Gemini → Mock fallback) → SSE chunks to frontend
+    → Stream LLM (OpenRouter Gemma 4 31B → Mock fallback) → SSE chunks to frontend
     → If low confidence → Auto-create Ticket → Handoff notification in stream
 ```
 
@@ -353,7 +351,7 @@ Located at: `c:\Users\LENOVO L460\Downloads\stitch_plum.ai_enterprise_agent_plat
 ### 🔴 Pending (20 tasks)
 
 **HIGH:**
-1. LLM API key integration (set GEMINI_API_KEY in .env)
+1. ~~LLM API key integration~~ ✅ (OpenRouter + Google Gemma 4 31B Free)
 2. Vite proxy config fix
 3. Inbox page (InboxPage.jsx — design exists in Stitch)
 4. WebSocket for real-time chat
@@ -372,5 +370,5 @@ Located at: `c:\Users\LENOVO L460\Downloads\stitch_plum.ai_enterprise_agent_plat
 2. **Sidebar Inbox links to `#inbox`** — not a real route
 3. **Analytics returns mock data** when DB is empty (intentional for demo)
 4. **BackgroundTasks for ingestion** — not production-scale (use Celery for prod)
-5. **Gemini streaming parser** may break on API format changes
+5. **OpenRouter free tier** may have rate limits — monitor for 429 errors
 6. **No `__init__.py` files** — run from project root with `uvicorn backend.main:app`

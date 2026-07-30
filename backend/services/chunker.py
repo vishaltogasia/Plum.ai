@@ -1,3 +1,8 @@
+import uuid
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timezone
+
+
 def split_text(text: str, chunk_size: int = 800, chunk_overlap: int = 150) -> list[str]:
     """
     Split a large block of text into smaller overlapping chunks.
@@ -44,3 +49,52 @@ def split_text(text: str, chunk_size: int = 800, chunk_overlap: int = 150) -> li
         start = start + step if start + step < end else end
         
     return chunks
+
+
+def split_text_with_metadata(
+    pages: List[tuple[int, str]],
+    document_id: int,
+    filename: str,
+    chunk_size: int = 800,
+    chunk_overlap: int = 150,
+) -> List[Dict[str, Any]]:
+    """
+    Split page-level text into overlapping chunks with rich metadata.
+    
+    Args:
+        pages: List of (page_number, page_text) tuples.
+        document_id: Database ID of the document.
+        filename: Original filename.
+        chunk_size: Maximum characters per chunk.
+        chunk_overlap: Overlap characters between consecutive chunks.
+    
+    Returns:
+        List of dicts with keys: 'text', 'metadata'.
+        Metadata contains: chunk_id, document_id, filename, page_number, chunk_index, upload_time.
+    """
+    if not pages:
+        return []
+
+    upload_time = datetime.now(timezone.utc).isoformat()
+    all_chunks: List[Dict[str, Any]] = []
+    global_chunk_idx = 0
+
+    for page_num, page_text in pages:
+        page_chunks = split_text(page_text, chunk_size, chunk_overlap)
+
+        for chunk_text in page_chunks:
+            chunk_id = str(uuid.uuid4())[:8]
+            all_chunks.append({
+                "text": chunk_text,
+                "metadata": {
+                    "chunk_id": chunk_id,
+                    "document_id": document_id,
+                    "filename": filename,
+                    "page_number": page_num,
+                    "chunk_index": global_chunk_idx,
+                    "upload_time": upload_time,
+                },
+            })
+            global_chunk_idx += 1
+
+    return all_chunks

@@ -44,6 +44,8 @@ def process_document_ingestion_task(
 ):
     """Background task to extract text, chunk it, generate embeddings and store in ChromaDB.
     
+    For PDFs: extracts per-page text so chunks carry page-number metadata.
+    For other formats: treats entire content as a single page.
     The original file is stored in MinIO for audit/download.
     Text extraction + vector indexing runs against the in-memory bytes.
     """
@@ -65,23 +67,34 @@ def process_document_ingestion_task(
             document.file_path = stored_key
             db.commit()
 
-        # Step 2: Extract Text from in-memory bytes
+        # Step 2: Extract text — page-aware for PDFs
         logger.info(f"Starting text extraction for document {document_id} ({filename})")
-        extracted_text = parser.extract_text_from_bytes(file_bytes, file_type)
+
+        if file_type == "pdf":
+            # Per-page extraction for page-number metadata
+            pages = parser.parse_pdf_pages(file_bytes)
+            extracted_text = "\n".join([text for _, text in pages])
+        else:
+            # Non-PDF: treat entire content as page 1
+            extracted_text = parser.extract_text_from_bytes(file_bytes, file_type)
+            pages = [(1, extracted_text)] if extracted_text else []
+
         char_count = len(extracted_text)
         
         if char_count == 0:
             raise ValueError("No readable text could be extracted from this document.")
             
-        # Step 3: Split text into chunks
-        chunks = chunker.split_text(extracted_text)
-        
-        # Step 4: Insert chunks into Vector database (ChromaDB)
-        vector_store.add_document_chunks(
-            business_id=business_id,
+        # Step 3: Split text into chunks with rich metadata (page number, chunk index, upload time)
+        chunks_with_meta = chunker.split_text_with_metadata(
+            pages=pages,
             document_id=document_id,
             filename=filename,
-            chunks=chunks
+        )
+        
+        # Step 4: Insert enriched chunks into ChromaDB
+        vector_store.add_chunks_with_metadata(
+            business_id=business_id,
+            chunks_with_meta=chunks_with_meta,
         )
         
         # Update Document state
@@ -89,7 +102,8 @@ def process_document_ingestion_task(
         document.content_text = extracted_text
         document.char_count = char_count
         db.commit()
-        logger.info(f"Ingestion successful for document {document_id}.")
+        logger.info(f"Ingestion successful for document {document_id}. "
+                    f"{len(chunks_with_meta)} chunks indexed with page metadata.")
         
     except Exception as e:
         logger.error(f"Ingestion error for document {document_id}: {str(e)}")
@@ -104,7 +118,7 @@ def process_url_ingestion_task(
     url: str,
     db_session: Session
 ):
-    """Background task to scrape a URL, chunk it, and save in ChromaDB."""
+    """Background task to scrape a URL, chunk it, and save in ChromaDB with metadata."""
     db = db_session
     document = db.query(models.Document).filter(models.Document.id == document_id).first()
     if not document:
@@ -121,15 +135,18 @@ def process_url_ingestion_task(
         page_title, extracted_text = result
         char_count = len(extracted_text)
         
-        # Chunk the extracted text
-        chunks = chunker.split_text(extracted_text)
-        
-        # Add to vector store
-        vector_store.add_document_chunks(
-            business_id=business_id,
+        # Chunk with metadata (treat entire scraped content as page 1)
+        pages = [(1, extracted_text)]
+        chunks_with_meta = chunker.split_text_with_metadata(
+            pages=pages,
             document_id=document_id,
             filename=page_title or url,
-            chunks=chunks
+        )
+        
+        # Add to vector store with rich metadata
+        vector_store.add_chunks_with_metadata(
+            business_id=business_id,
+            chunks_with_meta=chunks_with_meta,
         )
         
         # Update document record

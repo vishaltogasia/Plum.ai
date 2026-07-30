@@ -49,3 +49,9 @@ app.include_router(teams.router, prefix=settings.API_V1_STR)
 def health_check():
     """Health check endpoint to verify backend service status."""
     return {"status": "healthy", "service": settings.APP_NAME}
+
+@app.get("/health/llm", tags=["system"])
+def llm_health_check():
+    """Health check endpoint to verify LLM provider and model reachability."""
+    from backend.ai.rag import check_llm_health
+    return check_llm_health()

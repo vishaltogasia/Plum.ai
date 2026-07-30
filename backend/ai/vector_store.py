@@ -48,6 +48,35 @@ class VectorStore:
         )
         logger.info(f"Successfully indexed {len(chunks)} chunks for document {document_id} in business {business_id} collection.")
 
+    def add_chunks_with_metadata(self, business_id: int, chunks_with_meta: List[Dict[str, Any]]):
+        """Index document chunks with pre-built rich metadata (page_number, chunk_index, upload_time).
+        
+        Args:
+            business_id: The business tenant ID.
+            chunks_with_meta: List of dicts with keys 'text' and 'metadata'.
+        """
+        if not chunks_with_meta:
+            return
+
+        collection = self._get_or_create_collection(business_id)
+
+        texts = [c["text"] for c in chunks_with_meta]
+        metadatas = [c["metadata"] for c in chunks_with_meta]
+        doc_id = metadatas[0].get("document_id", 0) if metadatas else 0
+        ids = [f"doc_{doc_id}_{c['metadata'].get('chunk_id', c['metadata']['chunk_index'])}" for c in chunks_with_meta]
+
+        # Generate embeddings
+        embeddings = embedding_engine.get_embeddings(texts)
+
+        collection.add(
+            ids=ids,
+            embeddings=embeddings,
+            metadatas=metadatas,
+            documents=texts,
+        )
+        logger.info(f"Indexed {len(chunks_with_meta)} enriched chunks for document {doc_id} "
+                    f"in business {business_id} collection.")
+
     def delete_document_vectors(self, business_id: int, document_id: int):
         """Delete all indexed chunks for a specific document."""
         self._init_client()
@@ -70,10 +99,11 @@ class VectorStore:
         except Exception as e:
             logger.warning(f"Could not delete collection {name}: {str(e)}")
 
-    def search_similar_chunks(self, business_id: int, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def search_similar_chunks(self, business_id: int, query: str, limit: int | None = None) -> List[Dict[str, Any]]:
         """Retrieve most semantically relevant text chunks from the isolated tenant collection."""
         self._init_client()
         collection_name = self._get_collection_name(business_id)
+        n_results = limit if limit is not None else settings.TOP_K
         
         try:
             collection = self.client.get_collection(name=collection_name)
@@ -86,7 +116,7 @@ class VectorStore:
         
         results = collection.query(
             query_embeddings=[query_embedding],
-            n_results=limit
+            n_results=n_results
         )
         
         formatted_results = []

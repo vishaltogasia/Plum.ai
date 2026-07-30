@@ -90,7 +90,8 @@ services:
     container_name: plum-ai-backend
     environment:
       DATABASE_URL: postgresql://${DB_USER:-plum_user}:${DB_PASSWORD:-plum_password}@postgres:5432/${DB_NAME:-plum_ai}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemma-4-31b-it:free}
       SMTP_SERVER: ${SMTP_SERVER:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER}
@@ -104,12 +105,6 @@ services:
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-plum-documents}
       MINIO_USE_SSL: "false"
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
-      # Ollama local LLM — points to the Windows host machine
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      LLM_MODEL: ${LLM_MODEL:-llama3.2}
-    extra_hosts:
-      # Allows Docker container to reach Ollama running on Windows host
-      - "host.docker.internal:host-gateway"
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

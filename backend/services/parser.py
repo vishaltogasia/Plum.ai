@@ -31,18 +31,23 @@ class HTMLTextExtractor(HTMLParser):
     def get_text(self) -> str:
         return " ".join(self.text_parts)
 
-def parse_pdf(file_bytes: bytes) -> str:
-    """Extract text from a PDF file."""
+def parse_pdf_pages(file_bytes: bytes) -> list[tuple[int, str]]:
+    """Extract text from a PDF file, returning a list of (page_number, text) tuples."""
     pdf_file = io.BytesIO(file_bytes)
     reader = PdfReader(pdf_file)
-    extracted_text = []
+    pages = []
     
-    for page in reader.pages:
+    for page_num, page in enumerate(reader.pages, start=1):
         text = page.extract_text()
-        if text:
-            extracted_text.append(text)
+        if text and text.strip():
+            pages.append((page_num, text))
             
-    return "\n".join(extracted_text)
+    return pages
+
+def parse_pdf(file_bytes: bytes) -> str:
+    """Extract all text from a PDF file as a single string."""
+    pages = parse_pdf_pages(file_bytes)
+    return "\n".join([text for _, text in pages])
 
 def parse_docx(file_bytes: bytes) -> str:
     """Extract text from a Word Document (.docx)."""

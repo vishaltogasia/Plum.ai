@@ -20,15 +20,18 @@ class Settings(BaseSettings):
     # Vector Storage
     CHROMA_PERSIST_DIRECTORY: str = Field(default="./chroma_db", env="CHROMA_PERSIST_DIRECTORY")
 
-    # AI Stack / LLM
-    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
-    LLM_MODEL: str = Field(default="llama3.2", env="LLM_MODEL")
+    # AI Stack / LLM — OpenRouter
+    OPENROUTER_API_KEY: str | None = Field(default=None, env="OPENROUTER_API_KEY")
+    OPENROUTER_MODEL: str = Field(default="google/gemma-4-31b-it:free", env="OPENROUTER_MODEL")
     EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
-    
-    # Fallback/External AI API (if Ollama is not configured/offline)
-    # Using Gemini or OpenAI if keys are provided
-    GEMINI_API_KEY: str | None = Field(default=None, env="GEMINI_API_KEY")
-    OPENAI_API_KEY: str | None = Field(default=None, env="OPENAI_API_KEY")
+
+    # LLM Request Tuning
+    REQUEST_TIMEOUT: int = 30
+    MAX_OUTPUT_TOKENS: int = 800
+    TEMPERATURE: float = 0.0
+    SIMILARITY_THRESHOLD: float = 1.3  # ChromaDB distance above this = low confidence
+    TOP_K: int = 5  # Number of chunks to retrieve from ChromaDB
+    MAX_HISTORY_TOKENS: int = 1500  # Token budget for conversation history
 
     # Email Configuration
     SMTP_SERVER: str = Field(default="smtp.gmail.com", env="SMTP_SERVER")

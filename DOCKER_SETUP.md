@@ -22,8 +22,8 @@ DB_PASSWORD=your_secure_password_here
 DB_NAME=plum_ai
 DB_PORT=5432
 
-# Gemini API
-GEMINI_API_KEY=your_gemini_api_key_here
+# OpenRouter API (Google Gemma 4 31B Free)
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
 
 # SMTP Configuration
 SMTP_SERVER=smtp.gmail.com

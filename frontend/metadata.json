@@ -2,5 +2,5 @@
   "name": "Plum.ai",
   "description": "Multi-tenant Customer Support AI SaaS Platform",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }
